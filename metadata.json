@@ -1,0 +1,7 @@
+{
+  "name": "DocuGenius Workspace",
+  "description": "Un espace documentaire intelligent et assistant de génération de documents pour la gestion de projets clients.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
