@@ -8,10 +8,28 @@ export default defineConfig(({ mode }) => {
     // Exemple: si votre repo est "username/yes-conciergerie", base sera "/yes-conciergerie/"
     // Pour un repo nommé exactement "username.github.io", base sera "/"
     // Vous pouvez aussi définir VITE_BASE_PATH dans un fichier .env
-    const base = env.VITE_BASE_PATH || 
-                 (process.env.GITHUB_REPOSITORY 
-                   ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/`
-                   : '/yes-conciergerie/'); // ⚠️ REMPLACEZ par le nom de votre repo GitHub
+    const getBasePath = () => {
+      // 1. Vérifier si VITE_BASE_PATH est défini dans .env
+      if (env.VITE_BASE_PATH) return env.VITE_BASE_PATH;
+      
+      // 2. En production sur GitHub Actions, utiliser GITHUB_REPOSITORY
+      if (process.env.GITHUB_REPOSITORY) {
+        const repoName = process.env.GITHUB_REPOSITORY.split('/')[1];
+        // Si le repo s'appelle "username.github.io", base = "/"
+        if (repoName.endsWith('.github.io')) return '/';
+        return `/${repoName}/`;
+      }
+      
+      // 3. En production locale, utiliser le nom du repo par défaut
+      if (process.env.NODE_ENV === 'production') {
+        return '/yes-conciergerie/';
+      }
+      
+      // 4. En développement, base = "/"
+      return '/';
+    };
+    
+    const base = getBasePath();
     
     return {
       base: base,

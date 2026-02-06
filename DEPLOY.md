@@ -38,14 +38,17 @@ git push -u origin main
 2. Cliquez sur **Settings** (Paramètres)
 3. Dans le menu de gauche, cliquez sur **Pages**
 4. Sous **Source**, sélectionnez :
-   - **Source** : `GitHub Actions`
-5. Sauvegardez
+   - **Source** : `Deploy from a branch`
+   - **Branch** : `gh-pages` (la branche sera créée automatiquement par le workflow)
+   - **Folder** : `/ (root)`
+5. Cliquez sur **Save**
 
 ### 4. Déployer automatiquement
 
 Le workflow GitHub Actions est déjà configuré ! Il se déclenchera automatiquement :
 
 - ✅ À chaque push sur la branche `main`
+- ✅ Il créera/mettra à jour automatiquement la branche `gh-pages` avec les fichiers buildés
 - ✅ Vous pouvez aussi le déclencher manuellement depuis l'onglet **Actions** de GitHub
 
 **Premier déploiement** :
@@ -57,8 +60,10 @@ git push origin main
 ```
 
 2. Allez dans l'onglet **Actions** de votre repository
-3. Vous verrez le workflow "Deploy to GitHub Pages" en cours
+3. Vous verrez le workflow "Deploy to GitHub Pages (Branch)" en cours
 4. Attendez qu'il se termine (environ 2-3 minutes)
+5. Une fois terminé, la branche `gh-pages` sera créée automatiquement
+6. Votre site sera disponible quelques instants après
 
 ### 5. Accéder à votre site
 
