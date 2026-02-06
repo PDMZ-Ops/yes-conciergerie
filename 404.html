@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yes Conciergerie</title>
+    <script>
+        // Redirection pour GitHub Pages SPA
+        // Récupère le base path depuis l'URL
+        const path = window.location.pathname;
+        // Si on est sur /yes-conciergerie/..., on garde ce path
+        // Sinon on redirige vers /yes-conciergerie/
+        if (path.startsWith('/yes-conciergerie')) {
+            window.location.replace('/yes-conciergerie/index.html');
+        } else {
+            window.location.replace('/yes-conciergerie/');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirection en cours...</p>
+</body>
+</html>
