@@ -1,20 +1,64 @@
 
 import React from 'react';
 import { ProjectDocument } from '../types';
-import { X, Download, FileText, Share2, Printer, Key } from 'lucide-react';
+import { X, Download, FileText, Share2, Printer, Key, Trash2 } from 'lucide-react';
 
 interface DocumentViewerProps {
   document: ProjectDocument;
   onClose: () => void;
+  onDelete?: (documentId: string) => void;
 }
 
-const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) => {
+const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose, onDelete }) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
+  console.log('[DocumentViewer] Document reçu:', {
+    name: document.name,
+    type: document.type,
+    previewUrl: document.previewUrl,
+    hasPreviewUrl: !!document.previewUrl
+  });
+
   const isImage = document.type.startsWith('image/');
   const isPdf = document.type === 'application/pdf';
   
   // Simulation de rendu pour formats complexes (PPTX, DOCX) 
   // Dans une vraie application, on utiliserait un service de conversion ou un viewer spécialisé
   const isComplex = !isImage && !isPdf;
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(document.id);
+      onClose();
+    }
+  };
+
+  // Vérifier que previewUrl existe
+  if (!document.previewUrl) {
+    console.error('[DocumentViewer] Aucun previewUrl pour le document:', document);
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+        <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-xl" onClick={onClose} />
+        <div className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 animate-in zoom-in-95 duration-500">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center text-red-600 mx-auto mb-6">
+              <FileText className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-extrabold text-slate-900 mb-2">Document non disponible</h3>
+            <p className="text-slate-600 mb-6">
+              Le fichier "{document.name}" n'a pas d'URL valide. Il a peut-être été supprimé ou l'upload a échoué.
+            </p>
+            <button
+              onClick={onClose}
+              className="px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-yes-orange transition-yes"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
@@ -44,6 +88,14 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
                 <Share2 size={20} />
               </button>
             </div>
+            {onDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-red-100 hover:border-red-200 transition-yes"
+              >
+                <Trash2 size={16} /> Supprimer
+              </button>
+            )}
             <a 
               href={document.previewUrl} 
               download={document.name}
@@ -68,15 +120,43 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
                 src={document.previewUrl} 
                 alt={document.name} 
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  console.error('Erreur chargement image:', document.previewUrl);
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage non disponible%3C/text%3E%3C/svg%3E';
+                }}
               />
             )}
 
             {isPdf && (
-              <iframe 
-                src={`${document.previewUrl}#toolbar=0`} 
-                className="w-full h-full border-none"
-                title={document.name}
-              />
+              <div className="w-full h-full relative">
+                <iframe 
+                  src={`${document.previewUrl}#toolbar=0`} 
+                  className="w-full h-full border-none"
+                  title={document.name}
+                  onError={() => {
+                    console.error('Erreur chargement PDF:', document.previewUrl);
+                  }}
+                />
+                {/* Fallback si l'iframe ne charge pas */}
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-50 pointer-events-none" style={{ display: 'none' }} id="pdf-error-fallback">
+                  <div className="text-center p-8">
+                    <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center text-red-600 mx-auto mb-4">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-xl font-bold text-slate-900 mb-2">Impossible de charger le PDF</h4>
+                    <p className="text-slate-600 mb-4">
+                      Le fichier n'est pas accessible. Vérifie que le bucket "documents" existe dans Supabase Storage.
+                    </p>
+                    <a
+                      href={document.previewUrl}
+                      download={document.name}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-yes-orange transition-yes"
+                    >
+                      <Download size={18} /> Télécharger le fichier
+                    </a>
+                  </div>
+                </div>
+              </div>
             )}
 
             {isComplex && (
@@ -121,6 +201,46 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ document, onClose }) =>
           Document sécurisé • Yes Conciergerie Privée
         </footer>
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative bg-white w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500">
+            <div className="p-10">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center text-red-600">
+                  <Trash2 className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Supprimer le document</h3>
+                  <p className="text-sm text-slate-400 mt-1 font-medium">Cette action est irréversible</p>
+                </div>
+              </div>
+              
+              <p className="text-slate-600 mb-8 leading-relaxed">
+                Êtes-vous sûr de vouloir supprimer <strong>"{document.name}"</strong> ? 
+                Le fichier sera définitivement supprimé et ne pourra pas être récupéré.
+              </p>
+
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 px-6 py-4 text-slate-400 text-sm font-bold uppercase tracking-widest rounded-2xl hover:bg-slate-50 transition-yes border border-slate-100"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleDelete}
+                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-red-600 text-white text-sm font-bold uppercase tracking-widest rounded-2xl shadow-xl shadow-red-100 hover:bg-red-700 transition-yes"
+                >
+                  <Trash2 size={18} /> Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

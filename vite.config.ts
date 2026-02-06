@@ -4,7 +4,17 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // Pour GitHub Pages, utilisez le nom de votre repository
+    // Exemple: si votre repo est "username/yes-conciergerie", base sera "/yes-conciergerie/"
+    // Pour un repo nommé exactement "username.github.io", base sera "/"
+    // Vous pouvez aussi définir VITE_BASE_PATH dans un fichier .env
+    const base = env.VITE_BASE_PATH || 
+                 (process.env.GITHUB_REPOSITORY 
+                   ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/`
+                   : '/yes-conciergerie/'); // ⚠️ REMPLACEZ par le nom de votre repo GitHub
+    
     return {
+      base: base,
       server: {
         port: 3000,
         host: '0.0.0.0',
