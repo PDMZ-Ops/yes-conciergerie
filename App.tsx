@@ -184,10 +184,10 @@ const App: React.FC = () => {
 
       // ✅ Ne pas charger les documents dans la liste initiale (trop lourd)
       // On les chargera seulement quand on ouvre un projet
+      // ✅ Charger TOUS les projets (pas de filtre user_id)
       const queryPromise = supabase
         .from('projects')
         .select('id, first_name, last_name, location, created_at') // ✅ Pas de documents ici pour la performance
-        .eq('user_id', uid)
         .order('created_at', { ascending: false });
 
       const res = await withTimeout(
@@ -298,11 +298,11 @@ const App: React.FC = () => {
       console.log('[ensureProjectInfo] Début pour projet:', projectId);
       console.time(`[ensureProjectInfo] ${projectId}`);
       
+      // ✅ Charger les infos de n'importe quel projet (pas de filtre user_id)
       const queryPromise = supabase
         .from('projects')
         .select('info, documents')
         .eq('id', projectId)
-        .eq('user_id', uid)
         .single();
 
       const res = await withTimeout(
@@ -534,11 +534,11 @@ const App: React.FC = () => {
       } : null
     });
 
+    // ✅ Mettre à jour n'importe quel projet (pas de filtre user_id)
     const { error } = await supabase
       .from('projects')
       .update(updateData)
-      .eq('id', updatedProject.id)
-      .eq('user_id', userId);
+      .eq('id', updatedProject.id);
 
     if (error) {
       console.error('[handleUpdateProject] error', error);
@@ -577,11 +577,11 @@ const App: React.FC = () => {
     }
 
     try {
+      // ✅ Supprimer n'importe quel projet (pas de filtre user_id)
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', projectId)
-        .eq('user_id', userId);
+        .eq('id', projectId);
 
       if (error) {
         console.error('[handleDeleteProject] error', error);
