@@ -22,6 +22,14 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ onClose }) => {
     ];
 
     try {
+      // Créer un timeout de 6 secondes
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout')), 6000);
+      });
+
+      // Envoyer les requêtes webhook
+      // Note: fetch() résout même avec des codes d'erreur HTTP (404, 500, etc.)
+      // Il ne rejette que pour les erreurs réseau (pas de connexion, timeout réseau, etc.)
       const requests = urls.map(url => 
         fetch(url, {
           method: 'POST',
@@ -30,11 +38,19 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ onClose }) => {
         })
       );
 
-      await Promise.all(requests);
+      // Attendre soit la première réponse HTTP (même avec code d'erreur), soit le timeout de 6 secondes
+      await Promise.race([
+        Promise.any(requests), // Prend la première réponse HTTP (même si c'est un 404/500, c'est une réponse)
+        timeoutPromise
+      ]);
+
+      // Si on arrive ici, une réponse a été reçue dans les 6 secondes
       setStatus('success');
-      setTimeout(() => onClose(), 2000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Webhook Error:', error);
+      // Si c'est un timeout (pas de réponse dans les 6 secondes), afficher l'erreur
+      // Promise.any() rejette seulement si TOUTES les requêtes échouent (erreurs réseau)
+      // Donc si on arrive ici, soit c'est un timeout, soit toutes les requêtes ont échoué
       setStatus('error');
     }
   };
@@ -74,7 +90,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ onClose }) => {
             <div className="flex items-center gap-3">
               {status === 'success' && (
                 <div className="flex items-center gap-2 text-green-500 text-xs font-bold animate-in fade-in slide-in-from-left-4">
-                  <CheckCircle2 size={18} /> Données envoyées avec succès
+                  <CheckCircle2 size={18} /> Actualiser votre page dans une dizaine de secondes
                 </div>
               )}
               {status === 'error' && (
