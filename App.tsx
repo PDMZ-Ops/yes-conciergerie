@@ -163,14 +163,9 @@ const App: React.FC = () => {
   const loadProjects = useCallback(async (uid: string) => {
     console.log('[loadProjects] Début - Chargement de TOUS les projets');
     
-    // cache instant - affiche immédiatement les projets en cache
-    const cached = readCache(uid);
-    if (cached && cached.length > 0) {
-      console.log('[loadProjects] Cache trouvé:', cached.length, 'projets');
-      setProjects(cached);
-    } else {
-      console.log('[loadProjects] Pas de cache');
-    }
+    // ⚠️ Ne pas utiliser le cache car il filtre par user_id
+    // On charge toujours depuis Supabase pour avoir tous les projets
+    console.log('[loadProjects] Chargement depuis Supabase (ignorant le cache)');
 
     if (loadingProjectsRef.current) {
       console.log('[loadProjects] Déjà en cours de chargement, skip');
@@ -234,8 +229,8 @@ const App: React.FC = () => {
         });
       });
       
-      // Mettre à jour le cache avec les projets de base (sans documents/info pour la performance)
-      writeCache(uid, mapped);
+      // ⚠️ Ne pas mettre en cache car on charge tous les projets maintenant
+      // writeCache(uid, mapped); // Désactivé pour éviter les problèmes de cache
       lastLoadedUidRef.current = uid;
     } catch (e: any) {
       if (e?.message?.includes('Timeout')) {
