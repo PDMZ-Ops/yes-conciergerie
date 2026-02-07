@@ -2,7 +2,8 @@
 import React from 'react';
 import { X, Download, FileText, Image as ImageIcon, Briefcase, CreditCard, ShieldCheck } from 'lucide-react';
 
-const LOGO_ICON_URL = 'https://i.postimg.cc/hPC0kRrK/logo-Yes.png';
+// Utiliser le logo local depuis public/resources
+const LOGO_ICON_URL = `${import.meta.env.BASE_URL}resources/logo-official.png`;
 
 interface ResourceFile {
   id: string;
@@ -20,7 +21,7 @@ const RESOURCES: ResourceFile[] = [
     type: 'PNG / Vector',
     description: 'Logo haute résolution pour vos supports de communication.',
     icon: <ImageIcon className="w-6 h-6" />,
-    imageUrl: 'https://i.postimg.cc/hPC0kRrK/logo-Yes.png'
+    imageUrl: `${import.meta.env.BASE_URL}resources/logo-official.png`
   },
   {
     id: 'rib-alpes-jv',
@@ -28,7 +29,7 @@ const RESOURCES: ResourceFile[] = [
     type: 'Document Bancaire',
     description: 'Coordonnées bancaires officielles (CIC Val d\'Isère).',
     icon: <CreditCard className="w-6 h-6" />,
-    imageUrl: 'https://files.catbox.moe/kivl8u.png'
+    imageUrl: `${import.meta.env.BASE_URL}resources/rib-alpes-jv.png`
   },
   {
     id: 'inpi-brand',
@@ -36,7 +37,7 @@ const RESOURCES: ResourceFile[] = [
     type: 'Propriété Intellectuelle',
     description: 'Certificat officiel de dépôt de la marque Yes Conciergerie.',
     icon: <ShieldCheck className="w-6 h-6" />,
-    imageUrl: 'https://files.catbox.moe/id3nax.png'
+    imageUrl: `${import.meta.env.BASE_URL}resources/inpi-brand.png`
   },
   {
     id: 'kbis-official',
@@ -44,7 +45,7 @@ const RESOURCES: ResourceFile[] = [
     type: 'Registre Commerce',
     description: 'Justificatif d\'immatriculation pour la société Alpes JV.',
     icon: <Briefcase className="w-6 h-6" />,
-    imageUrl: 'https://files.catbox.moe/j4xid1.png'
+    imageUrl: `${import.meta.env.BASE_URL}resources/kbis-official.png`
   }
 ];
 
@@ -53,14 +54,62 @@ interface ResourcesModalProps {
 }
 
 const ResourcesModal: React.FC<ResourcesModalProps> = ({ onClose }) => {
-  const handleDownload = (imageUrl: string, name: string) => {
-    // In a real app, this would be a proper download link
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `${name.replace(/\s+/g, '_')}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (fileUrl: string, fileName: string, fileType: string) => {
+    try {
+      // Déterminer l'extension du fichier depuis l'URL ou le type
+      const getFileExtension = (url: string, type: string): string => {
+        // Essayer d'extraire l'extension depuis l'URL
+        const urlMatch = url.match(/\.([a-zA-Z0-9]+)(?:\?|$)/);
+        if (urlMatch) {
+          return urlMatch[1];
+        }
+        // Sinon, déterminer depuis le type
+        if (type.includes('PNG') || type.includes('png')) return 'png';
+        if (type.includes('PDF') || type.includes('pdf')) return 'pdf';
+        if (type.includes('JPEG') || type.includes('JPG') || type.includes('jpg')) return 'jpg';
+        if (type.includes('Vector') || type.includes('SVG')) return 'svg';
+        return 'png'; // Par défaut
+      };
+
+      const extension = getFileExtension(fileUrl, fileType);
+      const sanitizedName = fileName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '');
+      const downloadName = `${sanitizedName}.${extension}`;
+
+      // Méthode 1 : Essayer avec fetch pour contourner CORS si nécessaire
+      try {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Fetch failed');
+        
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = downloadName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Nettoyer l'URL du blob après un délai
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+      } catch (fetchError) {
+        // Méthode 2 : Fallback avec lien direct (si CORS bloque)
+        console.log('Fetch failed, using direct link method');
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = downloadName;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      // Fallback : ouvrir dans un nouvel onglet
+      window.open(fileUrl, '_blank');
+    }
   };
 
   return (
@@ -112,7 +161,7 @@ const ResourcesModal: React.FC<ResourcesModalProps> = ({ onClose }) => {
                     </div>
                   )}
                   <button 
-                    onClick={() => file.imageUrl && handleDownload(file.imageUrl, file.name)}
+                    onClick={() => file.imageUrl && handleDownload(file.imageUrl, file.name, file.type)}
                     className="flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest hover:bg-yes-orange transition-yes shadow-lg shadow-slate-100"
                   >
                     <Download size={16} />
