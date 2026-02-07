@@ -159,8 +159,9 @@ const App: React.FC = () => {
   };
 
   // ✅ Liste rapide (sans select '*')
+  // ✅ Chargement de TOUS les projets (pas de filtre user_id)
   const loadProjects = useCallback(async (uid: string) => {
-    console.log('[loadProjects] Début pour uid:', uid);
+    console.log('[loadProjects] Début - Chargement de TOUS les projets');
     
     // cache instant - affiche immédiatement les projets en cache
     const cached = readCache(uid);
